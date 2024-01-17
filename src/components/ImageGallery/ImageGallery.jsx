@@ -1,8 +1,8 @@
-import './ImageGallery.module.css';
+import css from './ImageGallery.module.css';
 import { ImageGalleryItem } from '../ImageGalleryItem/ImageGalleryItem';
 
 export const ImageGallery = ({ images, openModal }) => (
-  <ul className="ImageGallery">
+  <ul className={css.ImageGallery}>
     {images.map(({ id, webformatURL, tags, largeImageURL }) => (
       <ImageGalleryItem
         key={id}
