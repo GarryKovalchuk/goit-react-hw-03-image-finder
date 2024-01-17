@@ -1,12 +1,21 @@
 import css from './ImageGalleryItem.module.css';
+import { Component } from 'react';
 
-export const ImageGalleryItem = ({ src, alt, largeImageURL, openModal }) => {
-  return (
-    <li
-      className={css.ImageGalleryItem}
-      onClick={() => openModal(largeImageURL)}
-    >
-      <img src={src} alt={alt} className={css.ImageGalleryItemimage} />
-    </li>
-  );
-};
+export default class ImageGalleyItem extends Component {
+  onClick = () => {
+    return this.props.onClick({
+      largerImage: this.props.largerImage,
+      alt: this.props.alt,
+    });
+  };
+
+  render() {
+    const { src, alt } = this.props;
+
+    return (
+      <li className={css.ImageGalleryItem}>
+        <img src={src} alt={alt} onClick={this.onClick} />
+      </li>
+    );
+  }
+}

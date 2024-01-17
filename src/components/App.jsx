@@ -1,109 +1,124 @@
-import React, { Component } from 'react';
-import { fetchImages } from './ServiseAPI/API';
-import { Button } from './Button/Button';
-import { ImageGallery } from './ImageGallery/ImageGallery';
-import { Loader } from './Loader/Loader';
-import { Modal } from './Modal/Modal';
-import { Searchbar } from './Searchbar/Searchbar';
-import { animateScroll } from 'react-scroll';
+import { Component } from 'react';
+import { fetchByName, pagination } from './ServiseAPI/API';
+import Button from './Button/Button';
+import ImageGallery from './ImageGallery/ImageGallery';
+import Loader from './Loader/Loader';
+import Modal from './Modal/Modal';
+import Searchbar from './Searchbar/Searchbar';
+import css from './App.module.css';
 
 export class App extends Component {
   state = {
-    searchQuery: '',
-    images: [],
-    page: 1,
-    per_page: 12,
-    isLoading: false,
-    loadMore: false,
-    error: null,
+    foundImages: null,
+    searchItem: '',
     showModal: false,
-    largeImageURL: 'largeImageURL',
-    id: null,
+    showLoader: false,
+    nextPage: 1,
+    largerImage: null,
+    alt: null,
+    error: null,
+    status: 'idle',
+    showButton: true,
+    total: 0,
   };
 
-  componentDidUpdate(_, prevState) {
-    console.log(prevState.page);
-    console.log(this.state.page);
-    const { searchQuery, page } = this.state;
-    if (prevState.searchQuery !== searchQuery || prevState.page !== page) {
-      this.getImages(searchQuery, page);
+  componentDidUpdate(prevProps, prevState) {
+    const prevSearch = prevState.searchItem;
+    const nextSearch = this.state.searchItem;
+
+    if (prevSearch !== nextSearch) {
+      this.setState({ status: 'pending', nextPage: 2 });
+
+      fetchByName(nextSearch)
+        .then(foundImages => {
+          if (foundImages.total !== 0) {
+            this.setState({
+              foundImages: foundImages.hits,
+              status: 'resolved',
+              error: null,
+              total: foundImages.total,
+              showButton: true,
+            });
+          } else {
+            this.setState({
+              status: 'rejected',
+              error: new Error(`Cannot find photos for ${nextSearch} category`),
+            });
+          }
+        })
+        .catch(error => this.setState({ error, status: 'rejected' }));
     }
   }
 
-  getImages = async (query, page) => {
-    this.setState({ isLoading: true });
-    if (!query) {
-      return;
-    }
-    try {
-      const { hits, totalHits } = await fetchImages(query, page);
-      console.log(hits, totalHits);
-      this.setState(prevState => ({
-        images: [...prevState.images, ...hits],
-        loadMore: this.state.page < Math.ceil(totalHits / this.state.per_page),
-      }));
-    } catch (error) {
-      this.setState({ error: error.message });
-    } finally {
-      this.setState({ isLoading: false });
-    }
+  setSearchItem = data => {
+    this.setState({ searchItem: data });
   };
 
-  formSubmit = searchQuery => {
+  toggleModal = () => {
+    const { showModal } = this.state;
+    this.setState({ showModal: !showModal });
+  };
+
+  modalImage = ({ alt, largerImage }) => {
     this.setState({
-      searchQuery,
-      images: [],
-      page: 1,
-      loadMore: false,
+      largerImage: largerImage,
+      alt: alt,
     });
   };
 
-  onloadMore = () => {
-    this.setState(prevState => ({ page: prevState.page + 1 }));
-    this.scrollOnMoreButton();
-  };
+  onLoadMore = () => {
+    const { searchItem, nextPage } = this.state;
 
-  scrollOnMoreButton = () => {
-    animateScroll.scrollToBottom({
-      duration: 1000,
-      delay: 10,
-      smooth: 'linear',
-    });
-  };
-
-  openModal = largeImageURL => {
-    console.log(largeImageURL);
-    this.setState({
-      showModal: true,
-      largeImageURL: largeImageURL,
-    });
-  };
-
-  closeModal = () => {
-    this.setState({
-      showModal: false,
-    });
+    pagination(searchItem, nextPage)
+      .then(newImages => {
+        this.setState(({ foundImages, nextPage }) => ({
+          foundImages: [...foundImages, ...newImages.hits],
+          status: 'resolved',
+          nextPage: nextPage + 1,
+        }));
+        if (this.state.foundImages.length + 12 >= this.state.total) {
+          this.setState({ showButton: false });
+        }
+      })
+      .catch(error => this.setState({ error, status: 'rejected' }));
   };
 
   render() {
-    const { images, isLoading, loadMore, page, showModal, largeImageURL } =
-      this.state;
+    const {
+      showModal,
+      foundImages,
+      largerImage,
+      alt,
+      error,
+      status,
+      showButton,
+    } = this.state;
     return (
-      <>
-        <Searchbar onSubmit={this.formSubmit} />
-
-        {isLoading ? (
-          <Loader />
-        ) : (
-          <ImageGallery images={images} openModal={this.openModal} />
+      <div className={css.app}>
+        <Searchbar onSubmit={this.setSearchItem} />
+        {status === 'pending' && <Loader />}
+        {status === 'resolved' && (
+          <ImageGallery
+            images={foundImages}
+            openModal={this.toggleModal}
+            modalImage={this.modalImage}
+          />
         )}
-
-        {loadMore && <Button onloadMore={this.onloadMore} page={page} />}
-
+        {status === 'rejected' && (
+          <div className={css.error}>
+            <h1>{error.message}</h1>
+          </div>
+        )}
+        {status === 'resolved' && showButton && (
+          <Button onClick={this.onLoadMore} />
+        )}
         {showModal && (
-          <Modal largeImageURL={largeImageURL} onClose={this.closeModal} />
+          <Modal
+            onClose={this.toggleModal}
+            children={<img src={largerImage} alt={alt} />}
+          />
         )}
-      </>
+      </div>
     );
   }
 }
