@@ -1,41 +1,53 @@
 import React, { Component } from 'react';
 import css from './Searchbar.module.css';
+import { FiSearch } from 'react-icons/fi';
+import PropTypes from 'prop-types';
 
-export default class Searchbar extends Component {
+export class Searchbar extends Component {
   state = {
-    itemToSearch: '',
+    searchQuery: '',
   };
-  onSubmit = e => {
+
+  handleChange = e => {
+    // const { name, value } = e.currentTarget;
+    // this.setState({ [name]: value });
+    this.setState({ searchQuery: e.currentTarget.value.toLowerCase() });
+  };
+
+  handleSubmit = e => {
     e.preventDefault();
-    this.props.onSubmit(this.state.itemToSearch);
-  };
-  onChange = e => {
-    this.setState({ itemToSearch: e.target.value });
-  };
-  reset = () => {
-    this.setState({ itemToSearch: '' });
+    if (this.state.searchQuery.trim() === '') {
+      return alert('Please enter something :)');
+    }
+    this.props.onSubmit(this.state.searchQuery);
+    this.setState({ searchQuery: '' });
   };
 
   render() {
     return (
       <header className={css.Searchbar}>
-        <form className={css.SearchForm} onSubmit={this.onSubmit}>
+        <form onSubmit={this.handleSubmit} className={css.SearchForm}>
           <button type="submit" className={css.SearchFormButton}>
-            <span className={css.SearchFormButtonLabel}>Search</span>
+            <span>
+              <FiSearch size={25} stroke="#3f51b5" />
+            </span>
           </button>
 
           <input
-            onChange={this.onChange}
-            onClick={this.reset}
             className={css.SearchFormInput}
             type="text"
             autoComplete="off"
             autoFocus
             placeholder="Search images and photos"
-            value={this.state.itemToSearch}
+            name="searchQuery"
+            value={this.state.searchQuery}
+            onChange={this.handleChange}
           />
         </form>
       </header>
     );
   }
 }
+Searchbar.propTypes = {
+  onSubmit: PropTypes.func,
+};

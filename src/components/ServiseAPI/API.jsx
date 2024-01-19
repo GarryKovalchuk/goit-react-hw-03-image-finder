@@ -1,31 +1,14 @@
-const KEY = '40934379-06f64858dd9035abf448bc944';
-const URL = 'https://pixabay.com/api/?';
+import axios from 'axios';
 
-const options = new URLSearchParams([
-  ['orientation', 'horizontal'],
-  ['safesearch', 'true'],
-  ['per_page', 12],
-  ['image_type', 'photo'],
-]);
+axios.defaults.baseURL = 'https://pixabay.com/api/';
+axios.defaults.params = {
+  key: '27697316-9cc45c303ea5cb91afbaa3e72',
+  image_type: 'photo',
+  orientation: 'horizontal',
+  per_page: 12,
+};
 
-export function fetchByName(name) {
-  return fetch(`${URL}q=${name}&key=${KEY}&page=1&${options}`).then(
-    response => {
-      if (response.ok) {
-        return response.json();
-      }
-      return Promise.reject(new Error('Oops Something Went Wrong'));
-    }
-  );
-}
-
-export function pagination(name, pageNumber) {
-  return fetch(`${URL}q=${name}&key=${KEY}&page=${pageNumber}&${options}`).then(
-    response => {
-      if (response.ok) {
-        return response.json();
-      }
-      return Promise.reject(new Error('Oops Something Went Wrong'));
-    }
-  );
-}
+export const fetchImages = async (query, page) => {
+  const { data } = await axios.get(`?q=${query}&page=${page}`);
+  return data;
+};
