@@ -31,10 +31,10 @@ export class App extends Component {
   }
 
   getImages = async (query, page) => {
-    this.setState({ isLoading: true });
     if (!query) {
       return;
     }
+    this.setState({ isLoading: true });
     try {
       const { hits, totalHits } = await fetchImages(query, page);
       console.log(hits, totalHits);
@@ -92,11 +92,8 @@ export class App extends Component {
       <>
         <Searchbar onSubmit={this.formSubmit} />
 
-        {isLoading ? (
-          <Loader />
-        ) : (
-          <ImageGallery images={images} openModal={this.openModal} />
-        )}
+        {isLoading && <Loader />}
+        <ImageGallery images={images} openModal={this.openModal} />
 
         {loadMore && <Button onloadMore={this.onloadMore} page={page} />}
 
